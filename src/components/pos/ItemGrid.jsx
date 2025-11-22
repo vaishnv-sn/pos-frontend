@@ -25,7 +25,7 @@ const ItemCard = ({ item, onAddToCart }) => {
 
       {/* Stock Badge - Only shows when low stock */}
       {item.stock === "low" && (
-        <div className="flex items-center justify-center gap-1 bg-red-500 text-white text-xs py-1.5 rounded-md font-medium -mx-3 -mb-3">
+        <div className="flex items-center justify-center gap-1 bg-red-500 text-white text-xs py-1.5 rounded-b-md font-medium -mx-3 -mb-3">
           <span>⚠</span>
           <span>Low Stock</span>
         </div>
@@ -46,7 +46,7 @@ const ItemGrid = ({ selectedCategory = "All Items" }) => {
     },
     {
       id: 2,
-      name: "MARLBORO SILVER",
+      name: "MARLBORO SILVER BLUE",
       price: "23.500",
       stock: "low",
       category: "SMOKING",
