@@ -2,7 +2,7 @@ import React from "react";
 
 import OrderHeader from "./OrderHeader";
 import { CATEGORIES } from "../../constants/categories";
-import CustomButton from "../ui/CutomButton";
+import CustomButton from "../ui/CustomButton";
 
 const CategoryList = ({ selected, onSelect }) => {
   return (
