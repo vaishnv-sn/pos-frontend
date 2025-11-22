@@ -93,7 +93,7 @@ const OrderActions = () => {
         />
         <ActionButton
           className="col-span-2"
-          label="+ QTY"
+          label="QTY"
           iconKey="addQty"
           variant="yellow"
         />
@@ -134,7 +134,7 @@ const OrderActions = () => {
         />
         <ActionButton
           className="col-span-2"
-          label="- QTY"
+          label="QTY"
           iconKey="subQty"
           variant="yellow"
         />
