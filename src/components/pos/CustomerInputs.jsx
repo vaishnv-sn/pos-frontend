@@ -1,16 +1,21 @@
-import React, { useState } from "react";
+import React from "react";
+import usePosStore from "../../store/usePosStore";
 
 const CustomerInputs = () => {
-  const [formData, setFormData] = useState({
-    invoiceNo: "4",
-    user: "7034753806",
-    date: "18/11/2025",
-    customerName: "",
-    paymentMethod: "Cash",
-    phone: "",
-    barCode: "",
-    item: "",
-  });
+  const { customerDetails, updateCustomerDetails, addItemByBarcode } =
+    usePosStore();
+
+  const handleBarcodeKeyDown = (e) => {
+    if (e.key === "Enter") {
+      const success = addItemByBarcode(customerDetails.barCode);
+      if (success) {
+        updateCustomerDetails({ barCode: "" });
+      } else {
+        // Optional: Show error or beep
+        console.log("Item not found");
+      }
+    }
+  };
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm space-y-3">
@@ -20,9 +25,9 @@ const CustomerInputs = () => {
           <label className="text-xs text-gray-600 mb-1 block">Invoice No</label>
           <input
             type="text"
-            value={formData.invoiceNo}
+            value={customerDetails.invoiceNo}
             onChange={(e) =>
-              setFormData({ ...formData, invoiceNo: e.target.value })
+              updateCustomerDetails({ invoiceNo: e.target.value })
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -31,8 +36,8 @@ const CustomerInputs = () => {
           <label className="text-xs text-gray-600 mb-1 block">User</label>
           <input
             type="text"
-            value={formData.user}
-            onChange={(e) => setFormData({ ...formData, user: e.target.value })}
+            value={customerDetails.user}
+            onChange={(e) => updateCustomerDetails({ user: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -42,8 +47,8 @@ const CustomerInputs = () => {
           </label>
           <input
             type="text"
-            value={formData.date}
-            onChange={(e) => setFormData({ ...formData, date: e.target.value })}
+            value={customerDetails.date}
+            onChange={(e) => updateCustomerDetails({ date: e.target.value })}
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>
@@ -57,9 +62,9 @@ const CustomerInputs = () => {
           </label>
           <input
             type="text"
-            value={formData.customerName}
+            value={customerDetails.customerName}
             onChange={(e) =>
-              setFormData({ ...formData, customerName: e.target.value })
+              updateCustomerDetails({ customerName: e.target.value })
             }
             placeholder="Customer Name"
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -70,9 +75,9 @@ const CustomerInputs = () => {
             Payment
           </label>
           <select
-            value={formData.paymentMethod}
+            value={customerDetails.paymentMethod}
             onChange={(e) =>
-              setFormData({ ...formData, paymentMethod: e.target.value })
+              updateCustomerDetails({ paymentMethod: e.target.value })
             }
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
           >
@@ -88,8 +93,8 @@ const CustomerInputs = () => {
         <label className="text-xs text-gray-600 mb-1 block">Phone</label>
         <input
           type="text"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+          value={customerDetails.phone}
+          onChange={(e) => updateCustomerDetails({ phone: e.target.value })}
           placeholder="Phone"
           className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
         />
@@ -101,10 +106,9 @@ const CustomerInputs = () => {
           <label className="text-xs text-gray-600 mb-1 block">Bar Code</label>
           <input
             type="text"
-            value={formData.barCode}
-            onChange={(e) =>
-              setFormData({ ...formData, barCode: e.target.value })
-            }
+            value={customerDetails.barCode}
+            onChange={(e) => updateCustomerDetails({ barCode: e.target.value })}
+            onKeyDown={handleBarcodeKeyDown}
             placeholder="Bar Code"
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
@@ -113,8 +117,8 @@ const CustomerInputs = () => {
           <label className="text-xs text-gray-600 mb-1 block">Item</label>
           <input
             type="text"
-            value={formData.item}
-            onChange={(e) => setFormData({ ...formData, item: e.target.value })}
+            value={customerDetails.item}
+            onChange={(e) => updateCustomerDetails({ item: e.target.value })}
             placeholder="Item"
             className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
           />

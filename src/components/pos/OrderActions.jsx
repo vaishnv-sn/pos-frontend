@@ -1,4 +1,5 @@
 import React from "react";
+import usePosStore from "../../store/usePosStore";
 import {
   Pause,
   RefreshCw,
@@ -75,6 +76,13 @@ const ActionButton = ({
 };
 
 const OrderActions = () => {
+  const {
+    clearOrder,
+    deleteSelectedItems,
+    incrementSelectedQty,
+    decrementSelectedQty,
+  } = usePosStore();
+
   return (
     <div className="h-full flex flex-col justify-between gap-4">
       {/* ROW 1 */}
@@ -96,12 +104,14 @@ const OrderActions = () => {
           label="QTY"
           iconKey="addQty"
           variant="yellow"
+          onClick={incrementSelectedQty}
         />
         <ActionButton
           className="col-span-2"
           label="Del All"
           iconKey="delAll"
           variant="red"
+          onClick={clearOrder}
         />
 
         <ActionButton
@@ -115,6 +125,7 @@ const OrderActions = () => {
           label="SAVE & PRINT"
           iconKey="savePrint"
           variant="green"
+          onClick={() => window.print()}
         />
       </div>
 
@@ -137,12 +148,14 @@ const OrderActions = () => {
           label="QTY"
           iconKey="subQty"
           variant="yellow"
+          onClick={decrementSelectedQty}
         />
         <ActionButton
           className="col-span-2"
           label="Del Row"
           iconKey="delRow"
           variant="red"
+          onClick={deleteSelectedItems}
         />
         <ActionButton
           className="col-span-2"
@@ -183,6 +196,7 @@ const OrderActions = () => {
           label="Clear"
           iconKey="clear"
           variant="purple"
+          onClick={clearOrder}
         />
         <ActionButton
           className="col-span-2"

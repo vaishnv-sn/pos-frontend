@@ -1,56 +1,25 @@
-import React, { useState } from "react";
+import React from "react";
+import usePosStore from "../../store/usePosStore";
 
 const OrderTable = () => {
-  const [orderItems, setOrderItems] = useState([
-    {
-      id: 1,
-      name: "MARLBORO VISTA",
-      qty: 9,
-      price: 23.5,
-      unit: "Box",
-      amount: 211.5,
-      checked: true,
-    },
-    {
-      id: 2,
-      name: "MARLBORO SILVER BLUE",
-      qty: 1,
-      price: 23.5,
-      unit: "Box",
-      amount: 23.5,
-      checked: false,
-    },
-    {
-      id: 3,
-      name: "DAVIDOFF ONE SLIM",
-      qty: 3,
-      price: 24.5,
-      unit: "Box",
-      amount: 73.5,
-      checked: false,
-    },
-  ]);
+  const {
+    orderItems,
+    updateItemQty,
+    updateItemPrice,
+    updateItemUnit,
+    toggleItemCheck,
+  } = usePosStore();
 
-  const toggleCheck = (id) => {
-    setOrderItems(
-      orderItems.map((item) =>
-        item.id === id ? { ...item, checked: !item.checked } : item
-      )
-    );
-  };
-
-  const updateItem = (id, field, value) => {
-    setOrderItems(
-      orderItems.map((item) =>
-        item.id === id ? { ...item, [field]: value } : item
-      )
-    );
-  };
+  const totalQty = orderItems.reduce((sum, item) => sum + Number(item.qty), 0);
+  const totalAmount = orderItems.reduce(
+    (sum, item) => sum + Number(item.amount),
+    0
+  );
 
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-full">
       {/* Table Header */}
-      <div className="grid grid-cols-12 bg-blue-600 text-white text-xs font-semibold">
+      <div className="grid grid-cols-12 bg-blue-600 text-white text-xs font-semibold shrink-0">
         <div className="col-span-1 px-2 py-2 text-center">#</div>
         <div className="col-span-4 px-2 py-2">ITEM NAME</div>
         <div className="col-span-1 px-2 py-2 text-center">QTY</div>
@@ -60,17 +29,17 @@ const OrderTable = () => {
       </div>
 
       {/* Table Body */}
-      <div className="divide-y divide-gray-200">
-        {orderItems.map((item) => (
+      <div className="divide-y divide-gray-200 overflow-y-auto flex-1">
+        {orderItems.map((item, index) => (
           <div
-            key={item.id}
+            key={item.id || index}
             className="grid grid-cols-12 hover:bg-gray-50 text-sm"
           >
             <div className="col-span-1 px-2 py-2 flex items-center justify-center">
               <input
                 type="checkbox"
                 checked={item.checked}
-                onChange={() => toggleCheck(item.id)}
+                onChange={() => toggleItemCheck(item.id)}
                 className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
               />
             </div>
@@ -86,7 +55,7 @@ const OrderTable = () => {
               <input
                 type="number"
                 value={item.qty}
-                onChange={(e) => updateItem(item.id, "qty", e.target.value)}
+                onChange={(e) => updateItemQty(item.id, e.target.value)}
                 className="w-full px-2 py-1 text-center text-sm text-gray-800 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -94,14 +63,14 @@ const OrderTable = () => {
               <input
                 type="number"
                 value={item.price}
-                onChange={(e) => updateItem(item.id, "price", e.target.value)}
+                onChange={(e) => updateItemPrice(item.id, e.target.value)}
                 className="w-full px-2 py-1 text-right text-sm text-gray-800 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
             <div className="col-span-2 px-2 py-2">
               <select
                 value={item.unit}
-                onChange={(e) => updateItem(item.id, "unit", e.target.value)}
+                onChange={(e) => updateItemUnit(item.id, e.target.value)}
                 className="w-full px-1 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
               >
                 <option>Box</option>
@@ -112,7 +81,7 @@ const OrderTable = () => {
             <div className="col-span-2 px-2 py-2">
               <input
                 type="number"
-                value={item.amount}
+                value={Number(item.amount).toFixed(3)}
                 disabled
                 className="w-full px-2 py-1 text-right text-sm text-gray-800 font-medium bg-gray-50 border border-gray-200 rounded focus:outline-none"
               />
@@ -122,17 +91,17 @@ const OrderTable = () => {
       </div>
 
       {/* Add Row Button */}
-      <button className="w-full px-4 py-2 text-left text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors">
+      <button className="w-full px-4 py-2 text-left text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors shrink-0 border-t border-gray-200">
         + Add Row
       </button>
 
       {/* Total Row */}
-      <div className="grid grid-cols-12 bg-blue-600 text-white text-sm font-semibold">
+      <div className="grid grid-cols-12 bg-blue-600 text-white text-sm font-semibold shrink-0">
         <div className="col-span-6 px-4 py-2">TOTAL QTY</div>
         <div className="col-span-1 px-2 py-2">
           <input
             type="text"
-            value="13"
+            value={totalQty}
             disabled
             className="w-full px-2 py-1 text-center text-sm bg-blue-600 text-white border-0 focus:outline-none font-semibold"
           />
@@ -141,7 +110,7 @@ const OrderTable = () => {
         <div className="col-span-2 px-2 py-2">
           <input
             type="text"
-            value="308.500"
+            value={totalAmount.toFixed(3)}
             disabled
             className="w-full px-2 py-1 text-right text-sm bg-blue-600 text-white border-0 focus:outline-none font-semibold"
           />
