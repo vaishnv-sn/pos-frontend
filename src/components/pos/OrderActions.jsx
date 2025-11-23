@@ -18,6 +18,8 @@ import {
   Package,
 } from "lucide-react";
 
+import MaterialListModal from "../ui/MaterialListModal";
+
 const ICON_MAP = {
   hold: <Pause size={18} />,
   recall: <RefreshCw size={18} />,
