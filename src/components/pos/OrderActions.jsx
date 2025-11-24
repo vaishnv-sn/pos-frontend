@@ -77,7 +77,7 @@ const ActionButton = ({
   );
 };
 
-const OrderActions = () => {
+const OrderActions = ({ onOpenMaterialModal }) => {
   const {
     clearOrder,
     deleteSelectedItems,
@@ -217,6 +217,7 @@ const OrderActions = () => {
           label="Item"
           iconKey="item"
           variant="purple"
+          onClick={onOpenMaterialModal}
         />
         <ActionButton
           className="col-span-2"
