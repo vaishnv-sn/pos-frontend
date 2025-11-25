@@ -7,6 +7,7 @@ import { createCustomerSlice } from "./customerStore";
 import { createSummarySlice } from "./summaryStore";
 import { createProductSlice } from "./productStore";
 import { createMaterialSlice } from "./materialStore";
+import { createMetaSlice } from "./metaStore";
 
 const usePosStore = create((set, get) => ({
   ...createCategorySlice(set, get),
@@ -15,6 +16,7 @@ const usePosStore = create((set, get) => ({
   ...createSummarySlice(set, get),
   ...createProductSlice(set, get),
   ...createMaterialSlice(set, get),
+  ...createMetaSlice(set, get),
 }));
 
 export default usePosStore;
