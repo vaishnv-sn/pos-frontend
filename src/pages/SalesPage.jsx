@@ -23,7 +23,7 @@ const SalesPage = () => {
         <OrderSummary />
       </div>
 
-      <div className="w-[60%] flex flex-col no-scrollbar">
+      <div className="w-[60%] flex flex-col h-full overflow-hidden">
         <div className="h-[70%] flex no-scrollbar">
           <div className="w-[33.33%] border-l border-white no-scrollbar bg-white overflow-auto">
             <CategoryList />

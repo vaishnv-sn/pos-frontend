@@ -38,16 +38,14 @@ const ItemCard = ({ item, onAddToCart }) => {
 const ItemGrid = () => {
   const { selectedCategory, items, fetchItems, addItem } = usePosStore();
 
-  /** Fetch items once on page load */
   useEffect(() => {
     fetchItems();
   }, [fetchItems]);
 
-  /** Filter items from Zustand */
   const filteredItems =
-    selectedCategory === "All Items"
+    selectedCategory._id === null
       ? items
-      : items.filter((item) => item.category === selectedCategory);
+      : items.filter((item) => item.categoryId === selectedCategory._id);
 
   return (
     <div className="h-full flex flex-col">

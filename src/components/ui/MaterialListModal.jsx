@@ -24,10 +24,6 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem }) => {
     startIndex + itemsPerPage
   );
 
-  const handleItemAction = (item) => {
-    console.log("Item action:", item);
-  };
-
   return (
     <>
       {/* Backdrop */}
