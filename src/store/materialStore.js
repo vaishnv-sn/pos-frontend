@@ -3,18 +3,36 @@ import instance from "../lib/axios";
 
 export const createMaterialSlice = (set, get) => ({
   items: [],
+  itemsPage: 1,
+  itemsHasMore: true,
   loadingItems: false,
-  setItems: (items) => set({ items }),
 
-  fetchItems: async () => {
+  fetchItems: async (reset = false) => {
+    const { itemsPage, itemsHasMore, loadingItems, items } = get();
+    const selectedCategory = get().selectedCategory;
+
+    if (loadingItems || (!reset && !itemsHasMore)) return;
+
+    const page = reset ? 1 : itemsPage;
+    const categoryId = selectedCategory?._id ? selectedCategory._id : "";
+
+    set({ loadingItems: true });
+
     try {
-      set({ loadingItems: true });
+      const res = await instance.get(
+        `/material?page=${page}&limit=20${
+          categoryId ? `&category=${categoryId}` : ""
+        }`
+      );
 
-      // ✔ Real API call
-      const res = await instance.get("/material");
+      const newItems = res.data.data;
+      const totalPages = res.data.pagination.totalPages;
 
-      // API structure should be: { success: true, data: [...] }
-      set({ items: res.data.data });
+      set({
+        items: reset ? newItems : [...items, ...newItems],
+        itemsPage: page + 1,
+        itemsHasMore: page < totalPages,
+      });
     } catch (err) {
       console.error("Failed to fetch items:", err);
     } finally {

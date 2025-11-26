@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import usePosStore from "../../store/usePosStore";
 import OrderHeader from "./OrderHeader";
 import { ShoppingCart } from "lucide-react";
@@ -39,16 +39,37 @@ const ItemCard = ({ item, onAddToCart }) => {
 
 // MAIN ITEM GRID COMPONENT
 const ItemGrid = () => {
-  const { selectedCategory, items, fetchItems, addItem } = usePosStore();
+  const {
+    selectedCategory,
+    items,
+    fetchItems,
+    addItem,
+    itemsHasMore,
+    loadingItems,
+  } = usePosStore();
+
+  const loaderRef = useRef(null);
 
   useEffect(() => {
-    fetchItems();
-  }, [fetchItems]);
+    fetchItems(true);
+  }, [selectedCategory]);
 
-  const filteredItems =
-    selectedCategory._id === null
-      ? items
-      : items.filter((item) => item.categoryId === selectedCategory._id);
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting && itemsHasMore && !loadingItems) {
+        fetchItems(); // next page
+      }
+    });
+
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [itemsHasMore, loadingItems]);
+
+  const filteredItems = items;
 
   return (
     <div className="h-full flex flex-col">
@@ -60,6 +81,13 @@ const ItemGrid = () => {
             <ItemCard key={item._id} item={item} onAddToCart={addItem} />
           ))}
         </div>
+
+        {/* Loader target */}
+        <div ref={loaderRef} className="h-12"></div>
+
+        {loadingItems && (
+          <p className="text-center text-gray-500 text-sm py-2">Loading...</p>
+        )}
       </div>
     </div>
   );

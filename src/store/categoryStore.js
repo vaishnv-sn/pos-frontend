@@ -1,11 +1,12 @@
 import instance from "../lib/axios";
 
 export const createCategorySlice = (set, get) => ({
-  categories: [],
+  categories: [{ name: "All Items", _id: null }],
+  selectedCategory: { name: "All Items", _id: null },
+
   categoriesPage: 1,
   categoriesHasMore: true,
   loadingCategories: false,
-  selectedCategory: { name: "All Items", _id: null },
 
   setSelectedCategory: (category) => set({ selectedCategory: category }),
 
@@ -15,7 +16,6 @@ export const createCategorySlice = (set, get) => ({
     const { categoriesPage, categoriesHasMore, loadingCategories, categories } =
       get();
 
-    // Don't fetch if already loading or no more data (unless resetting)
     if (loadingCategories || (!reset && !categoriesHasMore)) return;
 
     set({ loadingCategories: true });
@@ -28,7 +28,9 @@ export const createCategorySlice = (set, get) => ({
       const { hasMore } = res.data.pagination;
 
       set({
-        categories: reset ? newCategories : [...categories, ...newCategories],
+        categories: reset
+          ? [{ name: "All Items", _id: null }, ...newCategories]
+          : [...categories, ...newCategories],
         categoriesPage: page + 1,
         categoriesHasMore: hasMore,
         loadingCategories: false,
@@ -46,7 +48,7 @@ export const createCategorySlice = (set, get) => ({
       const res = await instance.get(`/category?search=${searchTerm}&limit=20`);
 
       set({
-        categories: res.data.data,
+        categories: [{ name: "All Items", _id: null }, ...res.data.data],
         categoriesPage: 2,
         categoriesHasMore: res.data.pagination.hasMore,
         loadingCategories: false,
@@ -59,7 +61,7 @@ export const createCategorySlice = (set, get) => ({
 
   resetCategories: () => {
     set({
-      categories: [],
+      categories: [{ name: "All Items", _id: null }],
       categoriesPage: 1,
       categoriesHasMore: true,
       loadingCategories: false,

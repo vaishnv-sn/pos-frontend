@@ -4,14 +4,11 @@ import OrderHeader from "./OrderHeader";
 import CustomButton from "../ui/CustomButton";
 
 const CategoryList = () => {
-  const {
-    selectedCategory,
-    setSelectedCategory,
-    categories,
-    fetchCategories,
-    categoriesHasMore,
-    loadingCategories,
-  } = usePosStore();
+  const { selectedCategory, setSelectedCategory, categories } = usePosStore();
+
+  const fetchCategories = usePosStore((s) => s.fetchCategories);
+  const categoriesHasMore = usePosStore((s) => s.categoriesHasMore);
+  const loadingCategories = usePosStore((s) => s.loadingCategories);
 
   const loaderRef = useRef(null);
 
@@ -52,7 +49,7 @@ const CategoryList = () => {
 
             return (
               <CustomButton
-                key={category._id}
+                key={category._id ?? "all-items"}
                 label={category.name}
                 onClick={() => setSelectedCategory(category)}
                 active={isActive}
