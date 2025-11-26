@@ -1,22 +1,49 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import usePosStore from "../../store/usePosStore";
 import OrderHeader from "./OrderHeader";
 import CustomButton from "../ui/CustomButton";
 
 const CategoryList = () => {
-  const { selectedCategory, setSelectedCategory, categories, fetchCategories } =
-    usePosStore();
+  const {
+    selectedCategory,
+    setSelectedCategory,
+    categories,
+    fetchCategories,
+    categoriesHasMore,
+    loadingCategories,
+  } = usePosStore();
 
+  const loaderRef = useRef(null);
+
+  // Initial fetch
   useEffect(() => {
-    fetchCategories();
+    fetchCategories(true);
   }, []);
+
+  // Infinite scroll observer
+  useEffect(() => {
+    const el = loaderRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver((entries) => {
+      if (
+        entries[0].isIntersecting &&
+        categoriesHasMore &&
+        !loadingCategories
+      ) {
+        fetchCategories();
+      }
+    });
+
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, [categoriesHasMore, loadingCategories, fetchCategories]);
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header */}
       <OrderHeader title="Item Category" />
 
-      {/* Scrollable category list */}
       <div className="flex-1 overflow-y-auto p-3 no-scrollbar">
         <div className="grid grid-cols-2 gap-3">
           {categories.map((category) => {
@@ -25,7 +52,7 @@ const CategoryList = () => {
 
             return (
               <CustomButton
-                key={category.name}
+                key={category._id}
                 label={category.name}
                 onClick={() => setSelectedCategory(category)}
                 active={isActive}
@@ -34,6 +61,14 @@ const CategoryList = () => {
             );
           })}
         </div>
+
+        <div ref={loaderRef} className="h-10" />
+
+        {loadingCategories && (
+          <div className="text-center text-gray-500 py-2 text-sm">
+            Loading...
+          </div>
+        )}
       </div>
     </div>
   );
