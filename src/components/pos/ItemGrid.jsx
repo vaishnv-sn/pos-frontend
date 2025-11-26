@@ -1,6 +1,7 @@
 import React, { useEffect } from "react";
 import usePosStore from "../../store/usePosStore";
 import OrderHeader from "./OrderHeader";
+import { ShoppingCart } from "lucide-react";
 
 // ITEM CARD COMPONENT
 const ItemCard = ({ item, onAddToCart }) => {
@@ -11,12 +12,14 @@ const ItemCard = ({ item, onAddToCart }) => {
     >
       {/* Price Badge */}
       <div className="absolute top-2 left-2 px-2 py-1 rounded-md bg-green-500 text-white text-xs font-bold">
-        {Number(item.price).toFixed(3)}
+        {Number(item.retailRate).toFixed(3)}
       </div>
 
       {/* Cart Icon */}
       <div className="flex justify-center items-center flex-1 mt-4">
-        <div className="text-4xl text-yellow-700">🛒</div>
+        <div className="text-4xl text-yellow-700">
+          <ShoppingCart size={50} />
+        </div>
       </div>
 
       {/* Item Name */}
@@ -54,7 +57,7 @@ const ItemGrid = () => {
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
         <div className="grid grid-cols-4 gap-3">
           {filteredItems.map((item) => (
-            <ItemCard key={item.id} item={item} onAddToCart={addItem} />
+            <ItemCard key={item._id} item={item} onAddToCart={addItem} />
           ))}
         </div>
       </div>

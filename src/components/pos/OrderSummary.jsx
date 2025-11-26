@@ -2,54 +2,76 @@ import React from "react";
 import usePosStore from "../../store/usePosStore";
 
 const OrderSummary = () => {
-  const { orderItems, discount, adjustment, setDiscount, setAdjustment } =
-    usePosStore();
+  const {
+    orderItems,
+    discountAmount,
+    discountType,
+    adjustment,
+    setDiscountAmount,
+    setDiscountType,
+    setAdjustment,
+  } = usePosStore();
 
-  const totalAmount = orderItems.reduce(
-    (sum, item) => sum + Number(item.amount),
-    0
-  );
-  const taxRate = 0.1; // 10% tax
-  // Assuming totalAmount is inclusive of tax or exclusive?
-  // The mock data showed Total Amount 308.500, Tax 28.045, Taxable 280.455.
-  // 280.455 + 28.045 = 308.5.
-  // So Taxable = Total / (1 + rate)
-  // Tax = Total - Taxable
+  let totalTax = 0;
+  let totalTaxable = 0;
+  let totalAmount = 0;
 
-  // Or if prices are exclusive:
-  // Taxable = Total Amount from items (if items are exclusive)
-  // But usually POS shows price per unit which might be inclusive or exclusive.
-  // Let's assume prices are inclusive for now based on the mock.
+  // ----- ITEM-WISE TAX CALCULATION -----
+  orderItems.forEach((item) => {
+    const qty = Number(item.qty) || 0;
+    const price = Number(item.retailRate) || 0;
+    const rate = Number(item.taxRate) || 0; // numeric percent, ex: 10
+    // Default to true if not specified (most common case)
+    const includeTax = item.retailRateIncludeTax ?? true;
 
-  const taxableAmount = totalAmount / (1 + taxRate);
-  const taxAmount = totalAmount - taxableAmount;
+    let taxable = 0;
+    let tax = 0;
 
-  const finalTotal = totalAmount - Number(discount) + Number(adjustment);
+    if (includeTax) {
+      // Price includes tax
+      taxable = (price * qty) / (1 + rate / 100);
+      tax = price * qty - taxable;
+    } else {
+      // Price excludes tax
+      taxable = price * qty;
+      tax = taxable * (rate / 100);
+    }
+
+    totalTaxable += taxable;
+    totalTax += tax;
+    totalAmount += taxable + tax;
+  });
+
+  // ----- DISCOUNT -----
+  let discount = 0;
+  if (discountType === "PERCENT") {
+    discount = (totalAmount * Number(discountAmount || 0)) / 100;
+  } else {
+    discount = Number(discountAmount) || 0;
+  }
+
+  // ----- FINAL TOTAL -----
+  const finalTotal = totalAmount - discount + Number(adjustment || 0);
 
   return (
     <div className="bg-white p-4 rounded-lg shadow-sm space-y-3">
       {/* Row 1 */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex justify-between items-center gap-2">
-          <label className="text-sm text-gray-600 whitespace-nowrap">
-            Total Tax
-          </label>
+          <label className="text-sm text-gray-600">Total Tax</label>
           <input
-            type="text"
-            value={taxAmount.toFixed(3)}
+            value={totalTax.toFixed(2)}
             disabled
-            className="w-24 px-2 py-1 text-sm text-gray-800 font-medium text-right bg-gray-50 border border-gray-200 rounded focus:outline-none"
+            className="w-24 px-2 py-1 bg-gray-50 text-right border rounded text-sm"
           />
         </div>
+
         <div className="flex justify-between items-center gap-2">
-          <label className="text-sm text-gray-600 whitespace-nowrap">
-            Total Taxable
-          </label>
+          <label className="text-sm text-gray-600">Taxable Amount</label>
           <input
-            type="text"
-            value={taxableAmount.toFixed(3)}
+            value={totalTaxable.toFixed(2)}
             disabled
-            className="w-24 px-2 py-1 text-sm text-gray-800 font-medium text-right bg-gray-50 border border-gray-200 rounded focus:outline-none"
+            className="w-24 px-2 py-1 bg-gray-50 text-right border rounded text-sm"
           />
         </div>
       </div>
@@ -57,37 +79,44 @@ const OrderSummary = () => {
       {/* Row 2 */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex justify-between items-center gap-2">
-          <label className="text-sm text-gray-600 whitespace-nowrap">
-            Total Discount
-          </label>
-          <input
-            type="number"
-            value={discount}
-            onChange={(e) => setDiscount(e.target.value)}
-            className="w-24 px-2 py-1 text-sm text-gray-800 font-medium text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          />
+          <label className="text-sm text-gray-600">Discount</label>
+          <div className="flex items-center gap-1">
+            <input
+              type="number"
+              value={discountAmount}
+              onChange={(e) => setDiscountAmount(e.target.value)}
+              placeholder="0"
+              className="w-20 px-2 py-1 text-right border rounded text-sm"
+            />
+            <select
+              className="px-2 py-1 border rounded text-sm"
+              value={discountType}
+              onChange={(e) => setDiscountType(e.target.value)}
+            >
+              <option value="PERCENT">%</option>
+              <option value="FIXED">₹</option>
+            </select>
+          </div>
         </div>
+
         <div className="flex justify-between items-center gap-2">
-          <label className="text-sm text-gray-600 whitespace-nowrap">
-            Adjustment
-          </label>
+          <label className="text-sm text-gray-600">Adjustment</label>
           <input
             type="number"
             value={adjustment}
             onChange={(e) => setAdjustment(e.target.value)}
-            className="w-24 px-2 py-1 text-sm text-gray-800 font-medium text-right border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+            placeholder="0"
+            className="w-24 px-2 py-1 text-right border rounded text-sm"
           />
         </div>
       </div>
 
       {/* Final Total */}
       <div className="bg-yellow-200 rounded-lg px-4 py-3">
-        <input
-          type="text"
-          value={finalTotal.toFixed(3)}
-          disabled
-          className="w-full text-2xl font-bold text-gray-800 text-right bg-transparent border-0 focus:outline-none"
-        />
+        <div className="text-right">
+          <div className="text-xs text-gray-600 mb-1">Total Amount</div>
+          <div className="text-2xl font-bold">₹{finalTotal.toFixed(2)}</div>
+        </div>
       </div>
     </div>
   );

@@ -8,6 +8,7 @@ const OrderTable = () => {
     updateItemPrice,
     updateItemUnit,
     toggleItemCheck,
+    units, // <-- from meta slice
   } = usePosStore();
 
   const totalQty = orderItems.reduce((sum, item) => sum + Number(item.qty), 0);
@@ -18,7 +19,7 @@ const OrderTable = () => {
 
   return (
     <div className="bg-white rounded-lg shadow-sm overflow-hidden flex flex-col h-full">
-      {/* Table Header */}
+      {/* Header */}
       <div className="grid grid-cols-12 bg-blue-600 text-white text-xs font-semibold shrink-0">
         <div className="col-span-1 px-2 py-2 text-center">#</div>
         <div className="col-span-4 px-2 py-2">ITEM NAME</div>
@@ -28,92 +29,96 @@ const OrderTable = () => {
         <div className="col-span-2 px-2 py-2 text-right">AMOUNT</div>
       </div>
 
-      {/* Table Body */}
+      {/* Body */}
       <div className="divide-y divide-gray-200 overflow-y-auto flex-1">
-        {orderItems.map((item, index) => (
-          <div
-            key={item.id || index}
-            className="grid grid-cols-12 hover:bg-gray-50 text-sm"
-          >
-            <div className="col-span-1 px-2 py-2 flex items-center justify-center">
-              <input
-                type="checkbox"
-                checked={item.checked}
-                onChange={() => toggleItemCheck(item.id)}
-                className="w-4 h-4 text-blue-600 rounded focus:ring-blue-500"
-              />
+        {orderItems.map((item, index) => {
+          const ID = item._id; // correct key
+          const retailRate = Number(item.retailRate) || 0;
+
+          return (
+            <div
+              key={ID}
+              className="grid grid-cols-12 hover:bg-gray-50 text-sm"
+            >
+              {/* Checkbox */}
+              <div className="col-span-1 px-2 py-2 flex items-center justify-center">
+                <input
+                  type="checkbox"
+                  checked={item.checked}
+                  onChange={() => toggleItemCheck(ID)}
+                  className="w-4 h-4 text-blue-600 rounded"
+                />
+              </div>
+
+              {/* Name */}
+              <div className="col-span-4 px-2 py-2">
+                <input
+                  value={item.name}
+                  disabled
+                  className="w-full px-2 py-1 bg-transparent border-0 text-gray-800"
+                />
+              </div>
+
+              {/* Qty */}
+              <div className="col-span-1 px-2 py-2">
+                <input
+                  type="number"
+                  value={item.qty}
+                  onChange={(e) => updateItemQty(ID, e.target.value)}
+                  className="w-full px-2 py-1 text-center border border-gray-300 rounded focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Price */}
+              <div className="col-span-2 px-2 py-2">
+                <input
+                  type="number"
+                  value={retailRate}
+                  onChange={(e) => updateItemPrice(ID, e.target.value)}
+                  className="w-full px-2 py-1 text-right border border-gray-300 rounded focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Unit */}
+              <div className="col-span-2 px-2 py-2">
+                <select
+                  value={item.unit}
+                  onChange={(e) => updateItemUnit(ID, e.target.value)}
+                  className="w-full px-1 py-1 border border-gray-300 rounded text-xs bg-white"
+                >
+                  {units.map((u) => (
+                    <option key={u._id} value={u._id}>
+                      {u.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Amount */}
+              <div className="col-span-2 px-2 py-2">
+                <input
+                  disabled
+                  value={Number(item.amount).toFixed(2)}
+                  className="w-full px-2 py-1 text-right bg-gray-50 border border-gray-200 rounded"
+                />
+              </div>
             </div>
-            <div className="col-span-4 px-2 py-2">
-              <input
-                type="text"
-                value={item.name}
-                disabled
-                className="w-full px-2 py-1 text-sm text-gray-800 bg-transparent border-0 focus:outline-none"
-              />
-            </div>
-            <div className="col-span-1 px-2 py-2">
-              <input
-                type="number"
-                value={item.qty}
-                onChange={(e) => updateItemQty(item.id, e.target.value)}
-                className="w-full px-2 py-1 text-center text-sm text-gray-800 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div className="col-span-2 px-2 py-2">
-              <input
-                type="number"
-                value={item.price}
-                onChange={(e) => updateItemPrice(item.id, e.target.value)}
-                className="w-full px-2 py-1 text-right text-sm text-gray-800 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-              />
-            </div>
-            <div className="col-span-2 px-2 py-2">
-              <select
-                value={item.unit}
-                onChange={(e) => updateItemUnit(item.id, e.target.value)}
-                className="w-full px-1 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
-              >
-                <option>Box</option>
-                <option>Piece</option>
-                <option>Carton</option>
-              </select>
-            </div>
-            <div className="col-span-2 px-2 py-2">
-              <input
-                type="number"
-                value={Number(item.amount).toFixed(3)}
-                disabled
-                className="w-full px-2 py-1 text-right text-sm text-gray-800 font-medium bg-gray-50 border border-gray-200 rounded focus:outline-none"
-              />
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
-      {/* Add Row Button */}
-      <button className="w-full px-4 py-2 text-left text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors shrink-0 border-t border-gray-200">
+      {/* Footer Add Row */}
+      <button className="w-full px-4 py-2 text-left text-blue-600 text-sm hover:bg-blue-50 border-t border-gray-200">
         + Add Row
       </button>
 
-      {/* Total Row */}
+      {/* Total */}
       <div className="grid grid-cols-12 bg-blue-600 text-white text-sm font-semibold shrink-0">
         <div className="col-span-6 px-4 py-2">TOTAL QTY</div>
-        <div className="col-span-1 px-2 py-2">
-          <input
-            type="text"
-            value={totalQty}
-            disabled
-            className="w-full px-2 py-1 text-center text-sm bg-blue-600 text-white border-0 focus:outline-none font-semibold"
-          />
-        </div>
+        <div className="col-span-1 px-2 py-2 text-center">{totalQty}</div>
         <div className="col-span-3 px-4 py-2 text-right">TOTAL AMOUNT</div>
-        <div className="col-span-2 px-2 py-2">
-          <input
-            type="text"
-            value={totalAmount.toFixed(3)}
-            disabled
-            className="w-full px-2 py-1 text-right text-sm bg-blue-600 text-white border-0 focus:outline-none font-semibold"
-          />
+        <div className="col-span-2 px-2 py-2 text-right">
+          {totalAmount.toFixed(2)}
         </div>
       </div>
     </div>
