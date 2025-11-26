@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { X, Search, Plus, MoreVertical } from "lucide-react";
 import usePosStore from "../../store/usePosStore";
 
-const MaterialListModal = ({ isOpen, onClose, onNewItem }) => {
+const MaterialListModal = ({ isOpen, onClose, onNewItem, onEditItem }) => {
   const { items } = usePosStore(); // ⭐ Use items from Zustand
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -83,69 +83,94 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem }) => {
 
           {/* TABLE */}
           <div className="flex-1 overflow-auto px-6 py-4">
-            <table className="w-full">
-              <thead className="bg-gray-100 sticky top-0">
-                <tr>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                    TYPE ⇅
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                    ITEM NAME ⇅
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
-                    PRICE ⇅
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700"></th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
-                {currentItems.map((item, index) => (
-                  <tr key={index} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-sm text-gray-800">
-                      {item.type}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">
-                      {item.name}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-800">
-                      {item.price}
-                    </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          onClose(); // close list modal
-                          onEditItem(item); // open form modal with item data
-                        }}
-                        className="text-gray-600 hover:text-gray-800 p-1"
-                      >
-                        <MoreVertical size={18} />
-                      </button>
-                    </td>
+            {currentItems.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                {searchQuery ? "No items found" : "No items available"}
+              </div>
+            ) : (
+              <table className="w-full">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      CATEGORY
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      ITEM NAME
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">
+                      CODE
+                    </th>
+                    <th className="px-4 py-3 text-right text-sm font-semibold text-gray-700">
+                      RETAIL PRICE
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
+                      UNIT
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700"></th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-gray-200">
+                  {currentItems.map((item) => (
+                    <tr key={item._id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-800">
+                        {item.category || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800 font-medium">
+                        {item.name}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600">
+                        {item.code || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-800 text-right">
+                        ₹{Number(item.retailRate || 0).toFixed(2)}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-600 text-center">
+                        {item.unitPrimary || "-"}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <button
+                          onClick={() => {
+                            onClose(); // close list modal
+                            onEditItem(item); // open form modal with item data
+                          }}
+                          className="text-gray-600 hover:text-gray-800 p-1 hover:bg-gray-100 rounded"
+                          title="Edit item"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
           </div>
 
           {/* FOOTER */}
           <div className="px-6 py-4 border-t flex items-center justify-between">
             <div className="text-sm text-gray-600">
-              Showing {startIndex + 1} –{" "}
-              {Math.min(startIndex + itemsPerPage, filteredItems.length)} of{" "}
-              {filteredItems.length}
+              {filteredItems.length === 0 ? (
+                "No items"
+              ) : (
+                <>
+                  Showing {startIndex + 1} –{" "}
+                  {Math.min(startIndex + itemsPerPage, filteredItems.length)} of{" "}
+                  {filteredItems.length}
+                </>
+              )}
             </div>
 
             <div className="flex items-center gap-2">
               <button
                 onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                 disabled={currentPage === 1}
-                className="px-3 py-1 border rounded disabled:opacity-50"
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
               >
                 «
               </button>
 
               <div className="flex items-center gap-2">
-                <span>Page</span>
+                <span className="text-sm">Page</span>
                 <input
                   type="number"
                   value={currentPage}
@@ -153,9 +178,11 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem }) => {
                     const page = Number(e.target.value);
                     if (page >= 1 && page <= totalPages) setCurrentPage(page);
                   }}
-                  className="w-16 border rounded text-center"
+                  className="w-16 border rounded text-center py-1"
+                  min="1"
+                  max={totalPages}
                 />
-                <span>of {totalPages}</span>
+                <span className="text-sm">of {totalPages}</span>
               </div>
 
               <button
@@ -163,7 +190,7 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem }) => {
                   setCurrentPage(Math.min(totalPages, currentPage + 1))
                 }
                 disabled={currentPage === totalPages}
-                className="px-3 py-1 border rounded disabled:opacity-50"
+                className="px-3 py-1 border rounded disabled:opacity-50 hover:bg-gray-50"
               >
                 »
               </button>
