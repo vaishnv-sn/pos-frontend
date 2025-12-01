@@ -1,9 +1,18 @@
-import React from "react";
+import React, { useEffect } from "react";
 import usePosStore from "../../store/usePosStore";
+import useAuthStore from "../../store/authStore";
 
 const CustomerInputs = () => {
   const { customerDetails, updateCustomerDetails, addItemByBarcode } =
     usePosStore();
+  const { user } = useAuthStore();
+
+  // Populate user field with logged-in user data
+  useEffect(() => {
+    if (user?.phone) {
+      updateCustomerDetails({ user: user.phone });
+    }
+  }, [user]);
 
   const handleBarcodeKeyDown = (e) => {
     if (e.key === "Enter") {
@@ -37,8 +46,9 @@ const CustomerInputs = () => {
           <input
             type="text"
             value={customerDetails.user}
-            onChange={(e) => updateCustomerDetails({ user: e.target.value })}
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            readOnly
+            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm bg-gray-50 cursor-not-allowed"
+            title="Auto-populated from logged-in user"
           />
         </div>
         <div>

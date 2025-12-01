@@ -2,7 +2,7 @@
 export const createCustomerSlice = (set) => ({
   customerDetails: {
     invoiceNo: "4",
-    user: "7034753806",
+    user: "", // Will be populated from logged-in user
     date: new Date().toLocaleDateString("en-GB"),
     customerName: "",
     paymentMethod: "Cash",
