@@ -3,8 +3,13 @@ import usePosStore from "../../store/usePosStore";
 import useAuthStore from "../../store/authStore";
 
 const CustomerInputs = () => {
-  const { customerDetails, updateCustomerDetails, addItemByBarcode } =
-    usePosStore();
+  const {
+    customerDetails,
+    updateCustomerDetails,
+    addItemByBarcode,
+    barcodeLoading,
+    barcodeError,
+  } = usePosStore();
   const { user } = useAuthStore();
 
   // Populate user field with logged-in user data
@@ -14,15 +19,13 @@ const CustomerInputs = () => {
     }
   }, [user]);
 
-  const handleBarcodeKeyDown = (e) => {
-    if (e.key === "Enter") {
-      const success = addItemByBarcode(customerDetails.barCode);
-      if (success) {
+  const handleBarcodeKeyDown = async (e) => {
+    if (e.key === "Enter" && !barcodeLoading) {
+      const result = await addItemByBarcode(customerDetails.barCode);
+      if (result.success) {
         updateCustomerDetails({ barCode: "" });
-      } else {
-        // Optional: Show error or beep
-        console.log("Item not found");
       }
+      // Error is handled by store state
     }
   };
 
@@ -113,15 +116,34 @@ const CustomerInputs = () => {
       {/* Row 4 */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-600 mb-1 block">Bar Code</label>
-          <input
-            type="text"
-            value={customerDetails.barCode}
-            onChange={(e) => updateCustomerDetails({ barCode: e.target.value })}
-            onKeyDown={handleBarcodeKeyDown}
-            placeholder="Bar Code"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+          <label className="text-xs text-gray-600 mb-1 block flex justify-between">
+            <span>Bar Code</span>
+            {barcodeLoading && (
+              <span className="text-blue-500 animate-pulse">Scanning...</span>
+            )}
+          </label>
+          <div className="relative">
+            <input
+              type="text"
+              value={customerDetails.barCode}
+              onChange={(e) =>
+                updateCustomerDetails({ barCode: e.target.value })
+              }
+              onKeyDown={handleBarcodeKeyDown}
+              placeholder="Bar Code"
+              disabled={barcodeLoading}
+              className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                barcodeError
+                  ? "border-red-500 focus:ring-red-500"
+                  : "border-gray-300"
+              } ${barcodeLoading ? "bg-gray-50" : ""}`}
+            />
+            {barcodeError && (
+              <p className="text-xs text-red-500 mt-1 absolute -bottom-5 left-0">
+                {barcodeError}
+              </p>
+            )}
+          </div>
         </div>
         <div>
           <label className="text-xs text-gray-600 mb-1 block">Item</label>

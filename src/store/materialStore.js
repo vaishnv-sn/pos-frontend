@@ -1,4 +1,4 @@
-import { ITEMS } from "../constants/items";
+
 import instance from "../lib/axios";
 
 export const createMaterialSlice = (set, get) => ({
