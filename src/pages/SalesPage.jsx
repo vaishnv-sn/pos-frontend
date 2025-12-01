@@ -15,15 +15,15 @@ const SalesPage = () => {
   const [editItemData, setEditItemData] = useState(null);
 
   return (
-    <div className="w-full h-screen flex overflow-hidden bg-gray-100">
-      <div className="w-[40%] flex flex-col gap-4 overflow-auto">
+    <div className="w-full h-screen flex flex-col lg:flex-row overflow-hidden bg-gray-100">
+      <div className="w-full lg:w-[40%] flex flex-col gap-4 overflow-auto h-[40%] lg:h-full border-b lg:border-b-0 lg:border-r border-gray-300">
         <OrderHeader title="Sales" />
         <CustomerInputs />
         <OrderTable />
         <OrderSummary />
       </div>
 
-      <div className="w-[60%] flex flex-col h-full overflow-hidden">
+      <div className="w-full lg:w-[60%] flex flex-col h-[60%] lg:h-full overflow-hidden">
         <div className="h-[70%] flex no-scrollbar">
           <div className="w-[33.33%] border-l border-white no-scrollbar bg-white overflow-auto">
             <CategoryList />

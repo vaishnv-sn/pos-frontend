@@ -88,7 +88,7 @@ const OrderActions = ({ onOpenMaterialModal }) => {
   return (
     <div className="h-full flex flex-col justify-between gap-4">
       {/* ROW 1 */}
-      <div className="grid grid-cols-14 gap-2">
+      <div className="grid grid-cols-4 md:grid-cols-7 lg:grid-cols-14 gap-2">
         <ActionButton
           className="col-span-2"
           label="Hold"

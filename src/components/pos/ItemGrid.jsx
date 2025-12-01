@@ -76,7 +76,7 @@ const ItemGrid = () => {
       <OrderHeader title="Item Details" />
 
       <div className="flex-1 overflow-y-auto p-4 no-scrollbar">
-        <div className="grid grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
           {filteredItems.map((item) => (
             <ItemCard key={item._id} item={item} onAddToCart={addItem} />
           ))}
