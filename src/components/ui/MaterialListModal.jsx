@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import { X, Search, Plus, MoreVertical } from "lucide-react";
 import usePosStore from "../../store/usePosStore";
+import instance from "../../lib/axios";
 
 const MaterialListModal = ({ isOpen, onClose, onNewItem, onEditItem }) => {
   const { modalItems, modalItemsPagination, loadingModalItems } = usePosStore();
@@ -9,49 +10,28 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem, onEditItem }) => {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [openAction, setOpenAction] = useState(null);
 
-  // Prevent page scroll when modal is open
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = "hidden";
-    } else {
-      document.body.style.overflow = "";
-    }
-  }, [isOpen]);
+    const handler = () => setOpenAction(null);
+    window.addEventListener("click", handler);
+    return () => window.removeEventListener("click", handler);
+  }, []);
 
-  // Load items
-  const loadItems = useCallback(() => {
+  useEffect(() => {
+    if (!isOpen) return;
+
     const q = searchQuery.trim();
+
     if (q) {
-      searchModalItems(q, currentPage);
-    } else {
-      fetchModalItems(currentPage);
+      const handler = setTimeout(() => {
+        searchModalItems(q, currentPage);
+      }, 300);
+      return () => clearTimeout(handler);
     }
-  }, [searchQuery, currentPage, searchModalItems, fetchModalItems]);
 
-  // Initial + page change fetch
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const q = searchQuery.trim();
-    if (!q) {
-      fetchModalItems(currentPage);
-    }
-  }, [isOpen, currentPage, fetchModalItems]);
-
-  // Debounced search
-  useEffect(() => {
-    if (!isOpen) return;
-    const q = searchQuery.trim();
-    if (!q) return;
-
-    const handler = setTimeout(() => {
-      setCurrentPage(1);
-      searchModalItems(q, 1);
-    }, 300);
-
-    return () => clearTimeout(handler);
-  }, [searchQuery, isOpen, searchModalItems]);
+    fetchModalItems(currentPage);
+  }, [isOpen, currentPage, searchQuery, fetchModalItems, searchModalItems]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -69,13 +49,26 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem, onEditItem }) => {
     totalPages: 1,
   };
 
+  const onDeleteItem = async (item) => {
+    const ok = window.confirm("Are you sure you want to delete this item?");
+    if (!ok) return;
+
+    try {
+      await instance.delete(`/material/${item._id}`);
+
+      setCurrentPage(1);
+
+      await fetchModalItems(1);
+    } catch (err) {
+      console.error("Failed to delete:", err);
+    }
+  };
+
   return (
-    // ⭐ ONE SINGLE OVERLAY — clicking it closes modal
     <div
       className="fixed inset-0 z-50 bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
       onClick={onClose}
     >
-      {/* ⭐ Stop click propagation so clicking inside doesn't close */}
       <div
         className="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden"
         onClick={(e) => e.stopPropagation()}
@@ -147,7 +140,7 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem, onEditItem }) => {
                   <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700">
                     UNIT
                   </th>
-                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700" />
+                  <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700"></th>
                 </tr>
               </thead>
 
@@ -169,16 +162,43 @@ const MaterialListModal = ({ isOpen, onClose, onNewItem, onEditItem }) => {
                     <td className="px-4 py-3 text-sm text-gray-600 text-center">
                       {item.unitPrimary || "-"}
                     </td>
-                    <td className="px-4 py-3 text-center">
-                      <button
-                        onClick={() => {
-                          onClose();
-                          onEditItem(item);
-                        }}
-                        className="text-gray-600 hover:text-gray-800 p-1 hover:bg-gray-100 rounded"
-                      >
-                        <MoreVertical size={18} />
-                      </button>
+                    <td className="px-4 py-3 text-center relative">
+                      <div className="relative inline-block text-left">
+                        <button
+                          onClick={() => setOpenAction(item._id)}
+                          className="text-gray-600 hover:text-gray-800 p-1 hover:bg-gray-100 rounded"
+                        >
+                          <MoreVertical size={18} />
+                        </button>
+
+                        {openAction === item._id && (
+                          <div
+                            className="absolute right-0 mt-2 w-32 bg-white border rounded-md shadow-lg z-50"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <button
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 text-gray-700"
+                              onClick={() => {
+                                setOpenAction(null);
+                                onClose();
+                                onEditItem(item._id);
+                              }}
+                            >
+                              Edit
+                            </button>
+
+                            <button
+                              className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600"
+                              onClick={() => {
+                                setOpenAction(null);
+                                onDeleteItem(item);
+                              }}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}

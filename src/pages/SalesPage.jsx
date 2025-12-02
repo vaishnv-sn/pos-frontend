@@ -57,7 +57,7 @@ const SalesPage = () => {
             setMaterialFormOpen(false);
             setMaterialModalOpen(true);
           }}
-          editItemData={editItemData}
+          editItemId={editItemData}
         />
       </div>
     </div>

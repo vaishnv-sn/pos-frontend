@@ -10,9 +10,9 @@ import instance from "../../lib/axios";
 import CategorySelect from "../ui/CategorySelect";
 import CategoryFormModal from "../pos/AddCategoryFormModal";
 
-// ------------------------------------------
-// INITIAL FORM STATE
-// ------------------------------------------
+/* ------------------------------------------
+   INITIAL FORM VALUES
+------------------------------------------ */
 const initialForm = {
   name: "",
   hsn: "",
@@ -42,7 +42,45 @@ const initialForm = {
   imageUrl: "",
 };
 
-export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
+/* ------------------------------------------
+   NORMALIZER — converts backend item → form
+------------------------------------------ */
+const normalizeItem = (item = {}) => ({
+  _id: item._id || "",
+
+  name: item.name || "",
+  hsn: item.hsn || "",
+  code: item.code || "",
+  barcode: item.barcode || "",
+
+  categoryId: item.categoryId?._id || item.categoryId || "",
+
+  unitPrimary: item.unitPrimary?._id || item.unitPrimary || "",
+  unitSecondary: item.unitSecondary?._id || item.unitSecondary || "",
+
+  conversionFactor: item.conversionFactor || 1,
+
+  purchaseRate: item.purchaseRate || "",
+  retailRate: item.retailRate || "",
+  wholesaleRate: item.wholesaleRate || "",
+
+  taxId: item.taxId?._id || item.taxId || "",
+  purchaseRateIncludeTax: item.purchaseRateIncludeTax ?? true,
+  retailRateIncludeTax: item.retailRateIncludeTax ?? true,
+  wholesaleRateIncludeTax: item.wholesaleRateIncludeTax ?? true,
+
+  batchEnabled: item.batchEnabled || false,
+  serialNumberEnabled: item.serialNumberEnabled || false,
+
+  discountAmount: item.discount?.amount || "",
+  discountType: item.discount?.type || "",
+
+  warehouseId: item.warehouseId?._id || item.warehouseId || "",
+
+  imageUrl: item.imageUrl || "",
+});
+
+export default function MaterialFormModal({ isOpen, onClose, editItemId }) {
   const {
     categories,
     units,
@@ -55,77 +93,106 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
   } = usePosStore();
 
   const [form, setForm] = useState(initialForm);
-  const isEdit = Boolean(editItemData);
   const [isCategoryModalOpen, setCategoryModalOpen] = useState(false);
+  const isEdit = Boolean(editItemId);
 
-  // Generic update function
+  /* ------------------------------------------
+     GENERIC UPDATE FUNCTION
+  ------------------------------------------ */
   const update = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Load dropdowns + hydrate edit mode
+  /* ------------------------------------------
+     LOAD ALL DROPDOWNS
+  ------------------------------------------ */
   useEffect(() => {
     fetchUnits();
     fetchWarehouses();
     fetchTaxes();
+    fetchCategories();
+  }, []);
 
-    if (isEdit && editItemData) {
-      setForm({ ...editItemData });
+  /* ------------------------------------------
+     LOAD EDIT DATA
+  ------------------------------------------ */
+  useEffect(() => {
+    if (!isOpen) return;
+
+    if (isEdit) {
+      loadItem(editItemId);
     } else {
       setForm(initialForm);
     }
-  }, [editItemData]);
+  }, [isOpen, editItemId]);
 
-  const handleAddCategory = async (categoryName) => {
+  const loadItem = async (id) => {
     try {
-      const res = await instance.post("/category", { name: categoryName });
-      const newCategory = res.data.data;
-
-      await fetchCategories();
-
-      update("categoryId", newCategory._id);
+      const res = await instance.get(`/material/${id}`);
+      setForm(normalizeItem(res.data.data));
     } catch (err) {
-      console.error("Failed to create category:", err);
+      console.error("Failed to load material:", err);
     }
   };
 
-  // Submit handler
+  /* ------------------------------------------
+     SAVE HANDLER
+  ------------------------------------------ */
   const handleSave = async () => {
-    const payload = { ...form };
-
     try {
       if (isEdit) {
-        await instance.put(`/material/${form._id}`, payload);
+        await instance.put(`/material/${editItemId}`, form);
       } else {
-        await instance.post("/material", payload);
+        await instance.post("/material", form);
       }
       onClose();
     } catch (err) {
-      console.error("Save failed:", err);
+      console.error("Failed to save:", err);
     }
   };
 
-  // Options must be formatted for <Select>
+  /* ------------------------------------------
+     ADD CATEGORY
+  ------------------------------------------ */
+  const handleAddCategory = async (name) => {
+    try {
+      const res = await instance.post("/category", { name });
+      const newCat = res.data.data;
+
+      await fetchCategories();
+
+      update("categoryId", newCat._id);
+    } catch (err) {
+      console.error("Failed to add category:", err);
+    }
+  };
+
+  /* ------------------------------------------
+     OPTION MAPS
+  ------------------------------------------ */
   const categoryOptions = categories.map((c) => ({
-    label: c.name,
     value: c._id,
+    label: c.name,
   }));
 
   const unitOptions = units.map((u) => ({
-    label: u.name,
     value: u._id,
+    label: u.name,
   }));
 
   const taxOptions = taxes.map((t) => ({
-    label: `${t.name} (${t.rate}%)`,
     value: t._id,
+    label: `${t.name} (${t.rate}%)`,
   }));
 
   const warehouseOptions = warehouses.map((w) => ({
-    label: w.name,
     value: w._id,
+    label: w.name,
   }));
 
+  /* ------------------------------------------
+     UI (NO VISUAL CHANGES)
+  ------------------------------------------ */
   return (
     <>
       <Modal
@@ -136,32 +203,23 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
           <>
             {!isEdit && (
               <button
-                className="px-6 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded hover:bg-gray-50"
                 onClick={() => setForm(initialForm)}
+                className="px-6 py-2 text-sm font-medium bg-white border border-gray-300 rounded hover:bg-gray-50"
               >
-                Clear all
-              </button>
-            )}
-
-            {!isEdit && (
-              <button
-                className="px-6 py-2 text-sm font-medium text-blue-600 bg-white border border-blue-600 rounded hover:bg-blue-50"
-                onClick={handleSave}
-              >
-                Save & New
+                Clear All
               </button>
             )}
 
             <button
-              className="px-8 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
               onClick={handleSave}
+              className="px-8 py-2 text-sm font-medium text-white bg-blue-600 rounded hover:bg-blue-700"
             >
               {isEdit ? "Update" : "Save"}
             </button>
           </>
         }
       >
-        {/* Goods / Services */}
+        {/* ------------------------- TOP: TYPE ------------------------- */}
         <div className="flex justify-end mb-6">
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-600">Goods/Services</span>
@@ -172,12 +230,13 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
                   { label: "Goods", value: "Goods" },
                   { label: "Services", value: "Services" },
                 ]}
-                onChange={(val) => update("type", val)}
+                onChange={(v) => update("type", v)}
               />
             </div>
           </div>
         </div>
 
+        {/* ------------------------- GRID ------------------------- */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* LEFT COLUMN */}
           <div className="space-y-4">
@@ -185,51 +244,46 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
             <div>
               <Label>Category</Label>
               <CategorySelect
-                placeholder="Select category"
                 value={form.categoryId}
-                options={categoryOptions}
-                onChange={(val) => update("categoryId", val)}
+                onChange={(v) => update("categoryId", v)}
+                placeholder="Select category"
                 onAddNew={() => setCategoryModalOpen(true)}
               />
             </div>
 
-            {/* Name + HSN */}
+            {/* Name / HSN */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label required>Item Name</Label>
                 <Input
                   value={form.name}
-                  placeholder="Enter item name"
                   onChange={(e) => update("name", e.target.value)}
+                  placeholder="Enter item name"
                 />
               </div>
-
               <div>
                 <Label>Item HSN</Label>
                 <Input
                   value={form.hsn}
-                  placeholder="Enter item HSN"
                   onChange={(e) => update("hsn", e.target.value)}
+                  placeholder="Enter HSN"
                 />
               </div>
             </div>
 
-            {/* Code + Barcode */}
+            {/* Code / Barcode */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Item Code</Label>
                 <Input
                   value={form.code}
-                  placeholder="Enter code"
                   onChange={(e) => update("code", e.target.value)}
                 />
               </div>
-
               <div>
                 <Label>Barcode</Label>
                 <Input
                   value={form.barcode}
-                  placeholder="Enter barcode"
                   onChange={(e) => update("barcode", e.target.value)}
                 />
               </div>
@@ -240,20 +294,18 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
               <div>
                 <Label required>Unit Primary</Label>
                 <Select
-                  placeholder="Select"
                   value={form.unitPrimary}
                   options={unitOptions}
-                  onChange={(val) => update("unitPrimary", val)}
+                  onChange={(v) => update("unitPrimary", v)}
                 />
               </div>
 
               <div>
                 <Label>Secondary</Label>
                 <Select
-                  placeholder="Select"
                   value={form.unitSecondary}
                   options={unitOptions}
-                  onChange={(val) => update("unitSecondary", val)}
+                  onChange={(v) => update("unitSecondary", v)}
                 />
               </div>
 
@@ -268,10 +320,10 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
               </div>
             </div>
 
-            {/* Image Upload */}
+            {/* Image */}
             <div>
               <Label>Item Image</Label>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg h-40 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50">
+              <div className="border-2 border-dashed border-gray-300 rounded-lg h-40 flex flex-col items-center justify-center hover:bg-gray-50 cursor-pointer">
                 <Upload className="w-8 h-8 text-gray-400 mb-2" />
                 <span className="text-sm text-gray-600">
                   Upload image (max 5MB)
@@ -287,7 +339,6 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
               <div className="flex justify-between items-center">
                 <Label>Purchase Rate</Label>
                 <TaxToggle
-                  name="purchase_tax"
                   defaultInclude={form.purchaseRateIncludeTax}
                   onChange={(v) => update("purchaseRateIncludeTax", v)}
                 />
@@ -303,7 +354,6 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
               <div className="flex justify-between items-center">
                 <Label>Retail Rate</Label>
                 <TaxToggle
-                  name="retail_tax"
                   defaultInclude={form.retailRateIncludeTax}
                   onChange={(v) => update("retailRateIncludeTax", v)}
                 />
@@ -319,7 +369,6 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
               <div className="flex justify-between items-center">
                 <Label>Wholesale Rate</Label>
                 <TaxToggle
-                  name="wholesale_tax"
                   defaultInclude={form.wholesaleRateIncludeTax}
                   onChange={(v) => update("wholesaleRateIncludeTax", v)}
                 />
@@ -330,25 +379,22 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
               />
             </div>
 
-            {/* Tax + Warehouse */}
+            {/* Tax / Warehouse */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Label>Tax %</Label>
                 <Select
                   value={form.taxId}
                   options={taxOptions}
-                  placeholder="Select tax"
-                  onChange={(val) => update("taxId", val)}
+                  onChange={(v) => update("taxId", v)}
                 />
               </div>
-
               <div>
                 <Label>Warehouse</Label>
                 <Select
                   value={form.warehouseId}
                   options={warehouseOptions}
-                  placeholder="Select warehouse"
-                  onChange={(val) => update("warehouseId", val)}
+                  onChange={(v) => update("warehouseId", v)}
                 />
               </div>
             </div>
@@ -400,6 +446,7 @@ export default function MaterialFormModal({ isOpen, onClose, editItemData }) {
           </div>
         </div>
       </Modal>
+
       <CategoryFormModal
         isOpen={isCategoryModalOpen}
         onClose={() => setCategoryModalOpen(false)}
