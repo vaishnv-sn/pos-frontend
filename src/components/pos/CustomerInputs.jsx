@@ -22,8 +22,6 @@ const CustomerInputs = () => {
     }
   }, [user]);
 
-
-
   const handleBarcodeKeyDown = async (e) => {
     if (e.key === "Enter" && !barcodeLoading) {
       const result = await addItemByBarcode(customerDetails.barCode);
@@ -33,8 +31,6 @@ const CustomerInputs = () => {
       // Error is handled by store state
     }
   };
-
-
 
   const handleItemSelect = (val) => {
     const selectedItem = items.find((item) => item._id === val);
@@ -164,12 +160,20 @@ const CustomerInputs = () => {
           </div>
         </div>
         <div>
-          <MaterialSelect
-            placeholder="Select Item"
-            value={customerDetails.item}
-            onChange={handleItemSelect}
-            disabled={barcodeLoading}
-          />
+          <label className="text-xs text-gray-600 mb-1 flex justify-between">
+            <span>Item</span>
+            {barcodeLoading && (
+              <span className="text-blue-500 animate-pulse">Scanning...</span>
+            )}
+          </label>
+          <div className="relative">
+            <MaterialSelect
+              placeholder="Select Item"
+              value={customerDetails.item}
+              onChange={handleItemSelect}
+              disabled={barcodeLoading}
+            />
+          </div>
         </div>
       </div>
     </div>
