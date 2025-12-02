@@ -1,6 +1,6 @@
 import React, { useState, useRef, useCallback, useEffect } from "react";
 import { ChevronDown, Plus, Loader2 } from "lucide-react";
-import usePosStore from "../../store/usePosStore";
+import instance from "../../lib/axios";
 
 const CategorySelect = ({
   placeholder,
@@ -9,82 +9,102 @@ const CategorySelect = ({
   disabled = false,
   onAddNew,
 }) => {
-  const {
-    categories,
-    categoriesHasMore,
-    loadingCategories,
-    fetchCategories,
-    searchCategories,
-  } = usePosStore();
+  const [dropdownCategories, setDropdownCategories] = useState([]);
+  const [dropdownPage, setDropdownPage] = useState(1);
+  const [dropdownHasMore, setDropdownHasMore] = useState(true);
+  const [loadingDropdown, setLoadingDropdown] = useState(false);
 
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const observerTarget = useRef(null);
+
+  const observerRef = useRef(null);
   const searchTimeoutRef = useRef(null);
 
-  // Create options from categories
-  const options = categories.map((cat) => ({
-    label: cat.name,
-    value: cat._id,
-  }));
+  const fetchDropdown = useCallback(
+    async (reset = false) => {
+      if (loadingDropdown || (!reset && !dropdownHasMore)) return;
 
-  const selectedOption = options.find((opt) => opt.value === value);
+      const page = reset ? 1 : dropdownPage;
 
-  // Filter locally for instant feedback
-  const filteredOptions = searchTerm
-    ? options.filter((opt) =>
-        opt.label.toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    : options;
+      setLoadingDropdown(true);
+      try {
+        const res = await instance.get(
+          `/materialCategory?page=${page}&limit=20`
+        );
+        const data = res.data.data;
+        const totalPages = res.data.pagination.totalPages;
 
-  // Infinite scroll observer callback
-  const lastCategoryElementRef = useCallback(
-    (node) => {
-      if (loadingCategories) return;
-      if (observerTarget.current) observerTarget.current.disconnect();
-
-      observerTarget.current = new IntersectionObserver((entries) => {
-        if (entries[0].isIntersecting && categoriesHasMore && !searchTerm) {
-          fetchCategories();
-        }
-      });
-
-      if (node) observerTarget.current.observe(node);
+        setDropdownCategories((prev) => (reset ? data : [...prev, ...data]));
+        setDropdownPage(page + 1);
+        setDropdownHasMore(page < totalPages);
+      } catch (error) {
+        console.error("Category dropdown fetch failed:", error);
+      } finally {
+        setLoadingDropdown(false);
+      }
     },
-    [loadingCategories, categoriesHasMore, fetchCategories, searchTerm]
+    [dropdownPage, dropdownHasMore, loadingDropdown]
   );
 
-  const handleSelect = (optionValue) => {
-    onChange?.(optionValue);
-    setIsOpen(false);
-    setSearchTerm("");
-  };
+  const searchDropdown = useCallback(async (query) => {
+    setLoadingDropdown(true);
+    try {
+      const res = await instance.get(
+        `/materialCategory?page=1&limit=20&search=${query}`
+      );
+
+      const data = res.data.data;
+      const totalPages = res.data.pagination.totalPages;
+
+      setDropdownCategories(data);
+      setDropdownPage(2);
+      setDropdownHasMore(totalPages > 1);
+    } catch (error) {
+      console.error("Category search failed:", error);
+    } finally {
+      setLoadingDropdown(false);
+    }
+  }, []);
 
   const handleSearchChange = (e) => {
     const term = e.target.value;
     setSearchTerm(term);
 
-    // Clear previous timeout
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
     }
 
-    // Debounce search - only search on server after 300ms of no typing
     searchTimeoutRef.current = setTimeout(() => {
       if (term.trim()) {
-        searchCategories(term);
+        searchDropdown(term);
       } else {
-        // Reset to initial state when search is cleared
-        fetchCategories(true);
+        fetchDropdown(true);
       }
     }, 300);
   };
 
+  const lastCategoryRef = useCallback(
+    (node) => {
+      if (loadingDropdown) return;
+
+      if (observerRef.current) observerRef.current.disconnect();
+
+      observerRef.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && dropdownHasMore && !searchTerm) {
+          fetchDropdown();
+        }
+      });
+
+      if (node) observerRef.current.observe(node);
+    },
+    [loadingDropdown, dropdownHasMore, fetchDropdown, searchTerm]
+  );
+
   const handleOpen = () => {
     setIsOpen(true);
-    // Load initial categories if not loaded
-    if (categories.length === 0) {
-      fetchCategories(true);
+
+    if (dropdownCategories.length === 0) {
+      fetchDropdown(true);
     }
   };
 
@@ -93,53 +113,52 @@ const CategorySelect = ({
     setSearchTerm("");
   };
 
-  // Cleanup timeout on unmount
   useEffect(() => {
     return () => {
-      if (searchTimeoutRef.current) {
-        clearTimeout(searchTimeoutRef.current);
-      }
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, []);
 
+  const selectedCategory = dropdownCategories.find((cat) => cat._id === value);
+
   return (
     <div className="relative">
-      {/* Selected Value Display */}
+      {/* Button */}
       <button
         type="button"
         disabled={disabled}
         onClick={handleOpen}
-        className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 bg-white focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 disabled:bg-gray-50 text-left flex items-center justify-between"
+        className="w-full border border-gray-300 rounded px-3 py-2 text-sm text-gray-700 bg-white text-left flex items-center justify-between"
       >
-        <span className={selectedOption ? "text-gray-700" : "text-gray-400"}>
-          {selectedOption
-            ? selectedOption.label
+        <span className={selectedCategory ? "text-gray-700" : "text-gray-400"}>
+          {selectedCategory
+            ? selectedCategory.name
             : placeholder || "Select category"}
         </span>
         <ChevronDown className="text-gray-400 w-4 h-4" />
       </button>
 
-      {/* Dropdown Menu */}
+      {/* Dropdown */}
       {isOpen && !disabled && (
         <>
           {/* Backdrop */}
           <div className="fixed inset-0 z-10" onClick={handleClose} />
 
-          {/* Options */}
+          {/* Main dropdown */}
           <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-64 flex flex-col overflow-hidden">
-            {/* Search Input */}
+            {/* Search input */}
             <div className="p-2 border-b bg-white">
               <input
                 type="text"
                 placeholder="Search category..."
                 value={searchTerm}
                 onChange={handleSearchChange}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:border-blue-500"
                 onClick={(e) => e.stopPropagation()}
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded"
               />
             </div>
 
-            {/* Add New Category Button */}
+            {/* Add new category */}
             {onAddNew && (
               <button
                 type="button"
@@ -154,45 +173,48 @@ const CategorySelect = ({
               </button>
             )}
 
-            {/* Options List - Scrollable */}
+            {/* Category list */}
             <div className="flex-1 overflow-auto py-1">
-              {filteredOptions.length === 0 && !loadingCategories ? (
+              {dropdownCategories.length === 0 && !loadingDropdown ? (
                 <div className="px-4 py-2 text-sm text-gray-500">
                   No categories found
                 </div>
               ) : (
-                filteredOptions.map((opt, index) => {
-                  const isLast = index === filteredOptions.length - 1;
+                dropdownCategories.map((cat, index) => {
+                  const isLast = index === dropdownCategories.length - 1;
+
                   return (
                     <button
-                      key={opt.value}
-                      type="button"
-                      ref={isLast ? lastCategoryElementRef : null}
-                      onClick={() => handleSelect(opt.value)}
+                      key={cat._id}
+                      ref={isLast ? lastCategoryRef : null}
+                      onClick={() => {
+                        onChange(cat._id);
+                        handleClose();
+                      }}
                       className={`w-full px-4 py-2 text-left text-sm hover:bg-gray-100 ${
-                        value === opt.value
+                        value === cat._id
                           ? "bg-blue-50 text-blue-600 font-medium"
                           : "text-gray-700"
                       }`}
                     >
-                      {opt.label}
+                      {cat.name}
                     </button>
                   );
                 })
               )}
 
-              {/* Loading Indicator */}
-              {loadingCategories && (
+              {/* Loading */}
+              {loadingDropdown && (
                 <div className="px-4 py-3 flex items-center justify-center">
-                  <Loader2 size={18} className="animate-spin text-blue-600" />
+                  <Loader2 className="animate-spin text-blue-600" size={18} />
                   <span className="ml-2 text-sm text-gray-500">Loading...</span>
                 </div>
               )}
 
-              {/* No More Data */}
-              {!categoriesHasMore &&
-                categories.length > 0 &&
-                !loadingCategories &&
+              {/* End of list */}
+              {!dropdownHasMore &&
+                dropdownCategories.length > 0 &&
+                !loadingDropdown &&
                 !searchTerm && (
                   <div className="px-4 py-2 text-center text-xs text-gray-400">
                     All categories loaded
