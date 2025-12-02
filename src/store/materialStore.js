@@ -39,4 +39,21 @@ export const createMaterialSlice = (set, get) => ({
       set({ loadingItems: false });
     }
   },
+  searchItems: async (query) => {
+    set({ loadingItems: true });
+    try {
+      const res = await instance.get(
+        `/material?page=1&limit=20&search=${query}`
+      );
+      set({
+        items: res.data.data,
+        itemsPage: 2,
+        itemsHasMore: res.data.pagination.totalPages > 1,
+      });
+    } catch (err) {
+      console.error("Failed to search items:", err);
+    } finally {
+      set({ loadingItems: false });
+    }
+  },
 });

@@ -1,6 +1,7 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import usePosStore from "../../store/usePosStore";
 import useAuthStore from "../../store/authStore";
+import MaterialSelect from "../ui/MaterialSelect";
 
 const CustomerInputs = () => {
   const {
@@ -9,6 +10,8 @@ const CustomerInputs = () => {
     addItemByBarcode,
     barcodeLoading,
     barcodeError,
+    items,
+    addItem,
   } = usePosStore();
   const { user } = useAuthStore();
 
@@ -19,6 +22,8 @@ const CustomerInputs = () => {
     }
   }, [user]);
 
+
+
   const handleBarcodeKeyDown = async (e) => {
     if (e.key === "Enter" && !barcodeLoading) {
       const result = await addItemByBarcode(customerDetails.barCode);
@@ -26,6 +31,19 @@ const CustomerInputs = () => {
         updateCustomerDetails({ barCode: "" });
       }
       // Error is handled by store state
+    }
+  };
+
+
+
+  const handleItemSelect = (val) => {
+    const selectedItem = items.find((item) => item._id === val);
+    if (selectedItem) {
+      addItem(selectedItem);
+      // Optional: Clear selection to allow re-selecting the same item
+      updateCustomerDetails({ item: "" });
+    } else {
+      updateCustomerDetails({ item: val });
     }
   };
 
@@ -116,7 +134,7 @@ const CustomerInputs = () => {
       {/* Row 4 */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="text-xs text-gray-600 mb-1 block flex justify-between">
+          <label className="text-xs text-gray-600 mb-1 flex justify-between">
             <span>Bar Code</span>
             {barcodeLoading && (
               <span className="text-blue-500 animate-pulse">Scanning...</span>
@@ -146,13 +164,11 @@ const CustomerInputs = () => {
           </div>
         </div>
         <div>
-          <label className="text-xs text-gray-600 mb-1 block">Item</label>
-          <input
-            type="text"
+          <MaterialSelect
+            placeholder="Select Item"
             value={customerDetails.item}
-            onChange={(e) => updateCustomerDetails({ item: e.target.value })}
-            placeholder="Item"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            onChange={handleItemSelect}
+            disabled={barcodeLoading}
           />
         </div>
       </div>
@@ -160,4 +176,4 @@ const CustomerInputs = () => {
   );
 };
 
-export default CustomerInputs;
+export default React.memo(CustomerInputs);
